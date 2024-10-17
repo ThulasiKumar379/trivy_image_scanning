@@ -1,0 +1,77 @@
+-----------INSTALLATION STEPS linux ------------------- 
+cat << EOF | sudo tee -a /etc/yum.repos.d/trivy.repo
+[trivy]
+name=Trivy repository
+baseurl=https://aquasecurity.github.io/trivy-repo/rpm/releases/7/\$basearch/
+gpgcheck=0
+enabled=1
+EOF
+sudo yum -y update
+sudo yum -y install trivy
+
+---INSTALLATION STEPS---
+
+sudo apt-get install wget apt-transport-https gnupg lsb-release
+
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+
+sudo apt-get update
+
+sudo apt-get install trivy
+
+
+---COMMANDS---
+
+trivy image imagename
+
+trivy fs --security-checks vuln,config   Folder_name_OR_Path
+
+trivy image --severity HIGH,CRITICAL image_name
+
+trivy image -f json -o results.json image_name
+
+trivy repo repo-url
+
+trivy k8s --report summary cluster
+
+
+
+
+pipeline {
+    agent any
+
+    stages {
+        stage('CLONING GIT REPO') {
+            steps {
+                script {
+                    git 'https://github.com/AyeshaSidra123/Natural_API.git'
+                }
+            }
+        }
+
+        stage('BUILDING THE CODE') {
+            steps {
+                script {
+                    dir("/var/lib/jenkins/workspace/dotnetpipeline/Natural_API") {
+                        sh 'pwd'
+                        withDotNet(sdk: 'DOTNET_HOME') {
+                            sh 'dotnet build'
+                            sh 'pwd'
+                        }
+                    }
+                }
+            }
+        }
+         stage('TRIVI SCANNING') {
+            steps {
+                script {
+                    sh "trivy repo  https://github.com/AyeshaSidra123/Natural_API.git -f table -o report.txt"
+                }
+            }
+    }
+}
+}
+
+https://www.youtube.com/watch?v=rP6VpIzb1Jw
